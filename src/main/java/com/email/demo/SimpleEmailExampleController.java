@@ -14,15 +14,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.mail.Message;
+import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeUtility;
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 @Controller
 public class SimpleEmailExampleController {
     @Autowired
-    public JavaMailSender emailSender;
+    public JavaMailSender mailSender;
 
     @ResponseBody
     @RequestMapping("/sendSimpleEmail")
@@ -36,41 +39,48 @@ public class SimpleEmailExampleController {
         message.setText("Hello, Im testing Simple Email");
 
         // Send Message!
-        this.emailSender.send(message);
+        this.mailSender.send(message);
 
         return "Email Sent!";
     }
     @ResponseBody
     @RequestMapping("/sendSimpleEmail-with-attract")
-    public String sendMailWithAttachment(String fileToAttach){
-        String to = "phongtv@ttc-solutions.com.vn";
-        String subject = "Test Simple Email attachment";
-        String body = "Hello, Im testing Simple Email";
-        MimeMessagePreparator preparator = new MimeMessagePreparator()
-        {
-            public void prepare(MimeMessage mimeMessage) throws Exception
-            {
-                mimeMessage.setRecipient(Message.RecipientType.TO, new InternetAddress(to));
-                mimeMessage.setFrom(new InternetAddress("admin@gmail.com"));
-                mimeMessage.setSubject(subject);
-                mimeMessage.setText(body);
-                File file = new File("C:/Users/phongtv/Desktop/new 3.txt");
-                System.out.println("Path exists? " + file.exists());
-                FileSystemResource file2 = new FileSystemResource(file);
-                MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
-                helper.addAttachment("new 3.txt", file2);
-                helper.setText("", true);
-            }
-        };
+    public String sendMailWithAttachment(String fileToAttach) throws MessagingException {
+        String mailTo = "phongtv@ttc-solutions.com.vn";
+        MimeMessage message = mailSender.createMimeMessage();
 
-        try {
-            this.emailSender.send(preparator);
-            return "thanh cong";
-        }
-        catch (MailException ex) {
-            // simply log it and go on...
-            System.err.println(ex.getMessage());
-            return ex.getMessage();
-        }
+        // use the true flag to indicate you need a multipart message
+        MimeMessageHelper helper = new MimeMessageHelper(message, true);
+        helper.setTo(mailTo);
+
+        helper.setSubject("Email with Inline images Example");
+        helper.setText(
+                "<html>"
+                        + "<body>"
+                        + "<div>Dear student,"
+                        + "<div><strong>Add the image to the right:</strong></div>"
+                        + "<div>"
+                        + "<img src='cid:rightSideImage' style='float:right;width:50px;height:50px;'/>"
+                        + "<div>Adding a inline resource/image on to the right of the paragraph.</div>"
+                        + "<div>Adding a inline resource/image on to the right of the paragraph.</div>"
+                        + "<div>Adding a inline resource/image on to the right of the paragraph.</div>"
+                        + "<div>Adding a inline resource/image on to the right of the paragraph.</div>"
+                        + "</div>"
+                        + "<div><strong>Add the image to the left :</strong></div>"  + "<div>"
+                        + "<img src='cid:leftSideImage' style='float:left;width:50px;height:50px;'/>"
+                        + "<div>Adding a inline resource/image on to the left of the paragraph.</div>"
+                        + "<div>Adding a inline resource/image on to the left of the paragraph.</div>"
+                        + "<div>Adding a inline resource/image on to the left of the paragraph.</div>"
+                        + "<div>Adding a inline resource/image on to the left of the paragraph.</div>"
+                        + "</div>"
+                        + "<div>Thanks,</div>"
+                        + "kalliphant"
+                        + "</div></body>"
+                        + "</html>", true);
+        helper.addInline("rightSideImage",
+                new File("C:/Users/phongtv/Desktop/Talens Genera (1).png"));
+
+        mailSender.send(message);
+        return "thanh cong";
     }
 }
